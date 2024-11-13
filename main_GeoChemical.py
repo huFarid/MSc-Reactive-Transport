@@ -14,26 +14,8 @@ from utils.Equation_P import cal_P_Equation
 from utils.cal_Perm import cal_K
 from utils import config
 
-#import matplotlib.pyplot as plt
-#from pylab import legend
-#import pandas as pd
-#from scipy import optimize
-#from scipy.optimize import minimize
-#from scipy.interpolate import CubicSpline
-#from scipy.interpolate import interp1d
-#from numpy.polynomial import Polynomial as Proot
-
-
 
 N_Exp_Data=10;
-
-
-
-'''
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-'''
-
-'''##########################################################################################################'''
 
 
 
@@ -47,7 +29,8 @@ def f_landa(x_molal_H):
     numm=(keq_acid)-gama1*gama2*(x_molal_H**2)/(Macid-x_molal_H)
     
     return(numm)
-'''##########################################################################################################'''
+'''-----------------------------------------------------------------------------------------------------------'''
+
  
 def fprim_landa(x_molal_H):
     
@@ -59,12 +42,7 @@ def fprim_landa(x_molal_H):
     
     return(prim)    
     
-'''##########################################################################################################'''   
-
-
-
-
-
+'''-----------------------------------------------------------------------------------------------------------'''
 
 StartTime=time.time();
 dict_all_data={}
@@ -344,12 +322,12 @@ print(' perm0:',K0,'\n n: ',n)
 print(' Area (m2):',kArea,'\n', "Length(m):",kLength,'\n', 'Rate (gal/min):', kInjectionRate,'\n', "MaxDt(min):",K_CriticalDt ,'\n','Velocity (m/s):', uinj/100,'\n','Velocity (m/day):', uinj*86400/100)
 
 #%%
-'''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
+'''-----------------------------------------------------------------------------------------------------------'''
 ith_point = 0
 Clast_ave = np.zeros([npr,1])
 Qdt  = 0
 CQdt = 0
-'''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
+'''-----------------------------------------------------------------------------------------------------------'''
 #%%
 
 
@@ -444,7 +422,7 @@ config.por0       = por0
 
 while inj_Pvol_not_round < NPV:
     
-    '''@@@@@@@@@@@@@@@@@@@  Charge @@@@@@@@@@@@@@@@@@@@@@@@@'''
+    '''@@@@@@@@@@@@@@@@@@@  Charge m
     'electrical charge'        
     ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
     ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
