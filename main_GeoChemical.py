@@ -422,10 +422,10 @@ config.por0       = por0
 
 while inj_Pvol_not_round < NPV:
     
-    '''@@@@@@@@@@@@@@@@@@@  Charge m
+    '''@@@@@@@@@@@@@@@@@@@  Charge m'''
     'electrical charge'        
-    ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
-    ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
+    # ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
+    # ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
     pri_charge=np.array([1,2,0,1])
     sec_charge=np.array([0,2,1,1,1,0,1,1])
     
