@@ -47,22 +47,21 @@ def fprim_landa(x_molal_H):
 StartTime=time.time();
 dict_all_data={}
 dict_all_data_necessary={}
-
-# for i_kRate in range (300,301):
     
 i_kRate = 300
 ''' Field Scale Parameters '''
-kInjectionRate = 5;# gal/min  
-kArea = 1.053589;   # m2
-kLength = 141 # m
-k_Dt1 =0.01 ;# min
-K_CriticalDt = 10; # 5
-n       = 70  #umber of points-1
+kInjectionRate = 5;        # gal/min
+kArea          = 1.053589; # m2
+kLength        = 141;      # m
+k_Dt1          = 0.01;     # min
+K_CriticalDt   = 10;       # Maximum value of time step
+n              = 70;       # number of grid blocks - 1
 
 
-zarib_1 = 2000+3*i_kRate
-zarib_2 = 2000+3*i_kRate
-zarib_3 = 2000+3*i_kRate
+
+const_1 = 2900
+const_2 = 2900
+const_3 = 2900
 
 k_1     = 10**-1.08
 k_2     = 10**-3.96
@@ -70,12 +69,12 @@ k_3     = 10**-4.82
 k_4     = 1
 k_5     = 1
 
-k123=[zarib_1* k_1  ,  zarib_2*k_2   ,   zarib_3*k_3  , k_4,  k_5]
+k123=[const_1* k_1  ,  const_2*k_2   ,   const_3*k_3  , k_4,  k_5] # Reaction rate constants
 
 
 
 lll     = 0
-NPV     = 2
+NPV     = 2   # number of the pore volume of fluid to be injected
 NPV_NaCl= 10**1000
 pvs     = 13   # started point for  tuning   0,1,2,3,....
 pvf     = 30  #  
@@ -87,24 +86,24 @@ Ax      = kArea*10000#
 
 
 
-Porosity_i=0.39
-volfrac0=np.array([1-Porosity_i])
-MV_m=np.array([36.93*10**-6 ])
+Porosity_i = 0.39
+volfrac0   = np.array([1 - Porosity_i])
+MV_m       = np.array([36.93 * 10**-6])
 
-dt1    =k_Dt1*60   #
-dtc    = K_CriticalDt*60# the upper limit for dt
-orderdt= 2   # we will multiply dt wit thid 
-perdt  = 5  #
-dt_reduce=orderdt  # when the C is negetive, we decrease dt value
-ncor = 1
-cR   = 1#10**-3# convert mol/m3/s  to mmole/cm3/s in rate equation
-   
+dt1        = k_Dt1 * 60       
+dtc        = K_CriticalDt * 60 # the upper limit for dt
+orderdt    = 2                # we will multiply dt with this whenever necessary
+perdt      = 5                #
+dt_reduce  = orderdt          # when the Concentration is negative, we decrease dt value
+ncor       = 1
+cR         = 1                # convert mol/m3/s to mmole/cm3/s in rate equation
 
-ns   = 8
-nm   = 1  # related to the As, volfrac, vsolid,...
-npr  = 4
+
+ns   = 8      # number of secondary species
+nMineral = 1  # number of the minerals.   (It is connected to As, volfrac, vsolid,...)
+npr  = 4      # number of primary species
 MaxRem = 10**10
-nR     = ns+nm
+nR     = ns+nMineral
 cunit  = 1000  # convert mol/lit   into  mmol/lit
 
 ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
@@ -149,15 +148,15 @@ wp_acid         = 5              #
 M_weight_acid   = 60.052         # g/mol
 Macid           = (wp_acid/M_weight_acid)/((100-wp_acid)/1000) #
 
-shart=1
-while (shart==1):
+shart=True
+while (shart==True):
     aa1=f_landa(x_molal_H)
     aa2=fprim_landa(x_molal_H)
     
     x_molal_H_new=x_molal_H-aa1/aa2
-    de=x_molal_H_new-x_molal_H
-    if abs(de)<0.00000001:
-        shart=2
+    delta=x_molal_H_new-x_molal_H
+    if abs(delta)<0.00000001:
+        shart=False
     else:
         x_molal_H=x_molal_H_new
 
@@ -187,8 +186,8 @@ As0     = volfrac0*[10**4]
 
 K0 =2.3;    # % [darcy]
 
-As      = np.ones([nm,n+1]);
-volfrac = np.ones([nm,n+1]);
+As      = np.ones([nMineral,n+1]);
+volfrac = np.ones([nMineral,n+1]);
 
 
 for ee in range(n+1):
@@ -263,9 +262,9 @@ U       = np.zeros(C.shape)
 Cpv     = np.zeros((npr,1))
 numpv   = 0
 C_all   = []
-rme     = np.zeros([nm,n+1])
-rmef    = np.zeros([nm,n+1])
-rmeb    = np.zeros([nm,n+1])
+rme     = np.zeros([nMineral,n+1])
+rmef    = np.zeros([nMineral,n+1])
+rmeb    = np.zeros([nMineral,n+1])
 KK      = np.zeros([4, n+1])
 
 eltime   = 0
@@ -321,14 +320,14 @@ print(' perm0:',K0,'\n n: ',n)
 
 print(' Area (m2):',kArea,'\n', "Length(m):",kLength,'\n', 'Rate (gal/min):', kInjectionRate,'\n', "MaxDt(min):",K_CriticalDt ,'\n','Velocity (m/s):', uinj/100,'\n','Velocity (m/day):', uinj*86400/100)
 
-#%%
+
 '''-----------------------------------------------------------------------------------------------------------'''
 ith_point = 0
 Clast_ave = np.zeros([npr,1])
 Qdt  = 0
 CQdt = 0
 '''-----------------------------------------------------------------------------------------------------------'''
-#%%
+
 
 
 
@@ -338,7 +337,7 @@ pHpv=np.copy(C[1,-1])
 
 
 
-'Global variables'
+'Initialize the Global variables'
 
 config.dt   = dt
 config.Q    = Q
@@ -349,42 +348,24 @@ config.roi  = roi
 config.por0f = por0f
 config.Cl   = Cl
 config.KK   = KK
-
-# config.k1         = k1
-# config.k2         = k2
-# config.k3         = k3
-# config.IAP        = IAP
-# config.k123_all   = k123_all
-# config.C_H        = C_H
-# config.C_Ca       = C_Ca
-# config.target     = target
-
 config.Porosity_i = Porosity_i
 config.Xinj       = Xinj
 config.k123       = k123
-   
-
 config.Macid      = Macid
 config.keq_acid   = keq_acid
 config.gama1      = gama1
-# config.pri_charge = pri_charge
-# config.sec_charge = sec_charge
-# config.R          = R
-# config.Remaini    = Remaini
-# config.kmall      = kmall
 config.rmef       = rmef
 config.rmeb       = rmeb
 config.rme        = rme
 config.Xi         = Xi
 config.por0f      = por0f
 config.Pformer    = Pformer
-
 config.As         = As
 config.Cinj       = Cinj
 config.n          = n
 config.Cl         = Cl
 config.npr        = npr
-config.nm         = nm
+config.nMineral   = nMineral
 config.Keq        = Keq
 config.cunit      = cunit
 config.vrj        = vrj
@@ -415,98 +396,105 @@ config.por0       = por0
 
 
 
-
-
-
-
-
 while inj_Pvol_not_round < NPV:
+    '''-----------------------------------------------------------------------------------------------------------'''
     
-    '''@@@@@@@@@@@@@@@@@@@  Charge m'''
-    'electrical charge'        
-    # ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
-    # ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
-    pri_charge=np.array([1,2,0,1])
-    sec_charge=np.array([0,2,1,1,1,0,1,1])
+    # Electrical charge
+    # Primary and secondary charges
+    # P: 'H+', 'Ca2+', 'H2CO3*', CH3COO-
+    # S: CH3COOH, CO3--, HCO3-, OH-, Ca(Acet)-, CaCO3 (aq), Ca(OH)+, Ca(HCO3)-
     
-    aPri=np.array([9, 6     ,0 , 4.5])
-    bPri=np.array([0, 0.165 ,0 , 0  ])
+    pri_charge = np.array([1, 2, 0, 1])
+    sec_charge = np.array([0, 2, 1, 1, 1, 0, 1, 1])
     
-    aSec=np.array([0, 4.5   ,4 , 3.5,4.4 ,0 ,4.4 ,4.4 ])
-    bSec=np.array([0, 0     ,0 , 0  ,0   ,0 ,0   ,0   ])
+    aPri = np.array([9, 6, 0, 4.5])
+    bPri = np.array([0, 0.165, 0, 0])
     
-    I_P=np.zeros([1,n+1])
-    I_S=np.zeros([1,n+1])
-    I=np.zeros([1,n+1])
-    config.LandaP=np.ones([npr,n+1])
+    aSec = np.array([0, 4.5, 4, 3.5, 4.4, 0, 4.4, 4.4])
+    bSec = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     
-    LandaS=np.ones([ns ,n+1])
+    ' Initialize arrays of ionic activities'
+    I_P = np.zeros([1, n + 1])
+    I_S = np.zeros([1, n + 1])
+    I = np.zeros([1, n + 1])
+    
+    config.LandaP = np.ones([npr, n + 1])
+    LandaS = np.ones([ns, n + 1])
     config.LandaS = LandaS
     
-    for ee in range (n+1):
-        I_P[0,ee]=np.copy((0.5*abs(C[:,ee])/cunit*(pri_charge**2)).sum())
-        I_S[0,ee]=np.copy((0.5*abs(config.Xi[:,ee])/cunit*(sec_charge**2)).sum())
-        I[0,ee]=I_P[0,ee]+I_S[0,ee]
-    for ee in range (n+1):
+    ' Ionic Strength Calculation'
+    for ee in range(n + 1):
+        I_P[0, ee] = np.copy((0.5 * abs(C[:, ee]) / cunit * (pri_charge**2)).sum())
+        I_S[0, ee] = np.copy((0.5 * abs(config.Xi[:, ee]) / cunit * (sec_charge**2)).sum())
+        I[0, ee] = I_P[0, ee] + I_S[0, ee]
+    
+    ' Compute Landa of Primary Species'
+    for ee in range(n + 1):
         for j in range(npr):
-            config.LandaP[j,ee]=np.copy(np.exp((-0.51*((pri_charge[j])**2)*(I[0,ee]**0.5))/(1+0.3294*aPri[j]*(I[0,ee]**0.5))+bPri[j]*I[0,ee]))
-            
-            
-    for ee in range (n+1):
+            config.LandaP[j, ee] = np.exp(
+                -0.51 * (pri_charge[j]**2) * (I[0, ee]**0.5) /
+                (1 + 0.3294 * aPri[j] * (I[0, ee]**0.5)) + bPri[j] * I[0, ee]
+            )
+    
+    ' Compute Landa of Secondary Species'
+    for ee in range(n + 1):
         for j in range(ns):
-            config.LandaS[j,ee]=np.copy(np.exp((-0.51*((sec_charge[j])**2)*(I[0,ee]**0.5))/(1+0.3294*aSec[j]*(I[0,ee]**0.5))+bSec[j]*I[0,ee]))
-
-
-
-    '''@@@@@@@@@@@@@@@@@@@@@ new @@@@@@@@@@@@@@@@@@'''
-
-    for yym in range(nm):
-        for yyn in range(n+1):
-
-            Asf[yym,yyn]=As0[yym]*((volfrac[yym,yyn]/volfrac0[yym]))**(2/3)
-            Asb[yym,yyn]=As0[yym]*(config.por0[0,yyn]/config.Porosity_i)**(2/3)
-
-#                
-    Asb[0,:]=0
-    if inj_Pvol>=NPV_NaCl:
-        shNaCl+=1
-        config.Cinj=np.copy(Cinj)
-        config.Keq=np.copy(config.Keq)
-        C[:,0]=config.Cinj
-        if shNaCl==1:
-            config.dt=np.copy(dt1)
-    Xiformer=np.copy(config.Xi)
-    Cformer=np.copy(C)
-    config.Pformer=np.copy(P)
-    config.por0f=np.copy(config.por0)
+            config.LandaS[j, ee] = np.exp(
+                -0.51 * (sec_charge[j]**2) * (I[0, ee]**0.5) /
+                (1 + 0.3294 * aSec[j] * (I[0, ee]**0.5)) + bSec[j] * I[0, ee]
+            )
     
-    'Time'
- 
-    if neg_dt==1 or shomarE==1:
-        shomarE=0
-        config.dt=config.dt/dt_reduce
-        neg_dt=0
-        timestep-=1  
-        shomardt=0
-
-        
-        
-    timestep+=1
-    shomardt+=1
+    '''-----------------------New ------------------------------------------------------------------------------------'''
     
-    if config.dt<dtc:  # the refinement will be started
-        if shomardt%perdt==0:
-            shomardt=0
-            config.dt=config.dt*orderdt
-        
-    if config.dt>dtc:
-        config.dt=np.copy(dtc)
-        
-    if config.dt<dtmin:
-        print('this k was not Good')
+    ' Calculate the Reactive Surface Area'
+    for yym in range(nMineral):
+        for grid in range(n + 1):
+            Asf[yym, grid] = As0[yym] * ((volfrac[yym, grid] / volfrac0[yym]) ** (2 / 3))
+            Asb[yym, grid] = As0[yym] * ((config.por0[0, grid] / config.Porosity_i) ** (2 / 3))
+    
+    ' Boundary Condition for Surface Area'
+    Asb[0, :] = 0
+    
+    ' Injection and Configuration Adjustments'
+    if inj_Pvol >= NPV_NaCl:
+        shNaCl += 1
+        config.Cinj = np.copy(Cinj)
+        config.Keq = np.copy(config.Keq)
+        C[:, 0] = config.Cinj
+        if shNaCl == 1:
+            config.dt = np.copy(dt1)
+    
+    ' Store Previous States'
+    Xiformer = np.copy(config.Xi)
+    Cformer = np.copy(C)
+    config.Pformer = np.copy(P)
+    config.por0f = np.copy(config.por0)
+    
+    ' Time Step Updates'
+    if neg_dt == 1 or shomarE == 1:
+        shomarE = 0
+        config.dt /= dt_reduce
+        neg_dt = 0
+        timestep -= 1
+        shomardt = 0
+    
+    timestep += 1
+    shomardt += 1
+    
+    ' Adjust Time Step Size'
+    if config.dt < dtc:  # Start refinement
+        if shomardt % perdt == 0:
+            shomardt = 0
+            config.dt *= orderdt
+    
+    if config.dt > dtc:
+        config.dt = np.copy(dtc)
+    
+    if config.dt < dtmin:
+        print('This timestep size was not good.')
         break
-        # TTT=max(Remaini)+10
 
+    'Calculate the total concentrations'
     if ns>0:
         for ee in range (n+1):
             if ee==0:
@@ -534,35 +522,37 @@ while inj_Pvol_not_round < NPV:
   
   
     
-#    C=C+10**-9
     C[:,0]=np.copy(config.Cinj)
     shomar=0
-    shart=1
+    shart=True
     sh_neg=1
     sh=0
     vol_former=np.copy(volfrac)
-    neg_rme=np.ones((nm,n+1))
-    endM=np.ones((nm,n+1))
-   
-    while shart==1:
+    neg_rme=np.ones((nMineral,n+1))
+    endM=np.ones((nMineral,n+1))
+    
+    
+    
+    'Calculate the values of Jacobian Matrix'
+    while shart==True:
         sh+=1
 
         for j in range(npr):
-            a1=np.zeros((n,n))
+            C_Jacobian=np.zeros((n,n))
             for k in range (npr):
                 rr=time.time()
-                a1=cal_C_Jacobian(j,k,P,C,config.por0)
+                C_Jacobian = cal_C_Jacobian(j,k,P,C,config.por0)
                 if k==0:
-                    a=np.copy(a1)
+                    Jacobian_Main=np.copy(C_Jacobian)
                 elif k>0:
-                    a=np.hstack((a,a1))                
-            a=np.hstack((a,cal_C_P_Jacobian(j,k,P,C,config.por0)))
+                    Jacobian_Main=np.hstack((Jacobian_Main,C_Jacobian))                
+            Jacobian_Main=np.hstack((Jacobian_Main,cal_C_P_Jacobian(j,k,P,C,config.por0)))
             if j==0:
-                aaa=np.copy(a)
+                Jacobian=np.copy(Jacobian_Main)
             elif j>0:
-                aaa=np.vstack((aaa,a))
-        last=np.hstack((np.zeros((n,(npr)*(n))),cal_P_Jacobian(P,config.por0)))
-        aultimate=np.vstack((aaa,last))
+                Jacobian=np.vstack((Jacobian,Jacobian_Main))
+        lastSectionOfJacob=np.hstack((np.zeros((n,(npr)*(n))),cal_P_Jacobian(P,config.por0)))
+        finalJacobMatrix=np.vstack((Jacobian,lastSectionOfJacob))
 
         
         nu=npr*n+n;     # number PERM,volfrac,por0of unknowns 
@@ -576,16 +566,19 @@ while inj_Pvol_not_round < NPV:
         for i in range (n):
             ss+=1
             b[ss,0]=-cal_P_Equation(i,P,config.por0)# %P
-
-        dpc=np.linalg.solve(aultimate,b)
-#''' Concentration Update '''
+        
+        'Calculate the Concentration and Pressure changes'
+        dpc=np.linalg.solve(finalJacobMatrix,b)
+        
+        
+        'Update Concentration'
         ss=0
         for j in range (npr):
             for i in range(1,n+1):
                 Cnew[j,i]=C[j,i]+dpc[ss,0]
                 ss+=1
              
-#        '''   Pressure Update    '''
+        'Update Pressure     '
         for i in range (n):
             Pnew[0,i]=P[0,i]+dpc[ss,0]
             ss+=1
@@ -604,11 +597,11 @@ while inj_Pvol_not_round < NPV:
                 
         shomar+=1
 
-        shart=2
+        shart=False
         if np.amax(fgnew)>0.0002:
-            shart=1
+            shart=True
         
-        if sh_neg==1 and shart==2:
+        if sh_neg==1 and shart==False:
             sh_neg=2
             C_negetive=(Cnew-np.abs(Cnew))
             for ee in range(n+1):   # grid
@@ -620,7 +613,7 @@ while inj_Pvol_not_round < NPV:
         sh_vol=0    
         if shomar>=30 or sum(np.abs(fgnew))>=10**9:
             shomarE=1
-            shart=2
+            shart=False
             sh_vol=1
             config.Xi=np.copy(Xiformer)
             C=np.copy(Cformer)
@@ -630,7 +623,7 @@ while inj_Pvol_not_round < NPV:
         if neg_dt==0 and sh_vol==0: 
             C=np.copy(Cnew)
             P=np.copy(Pnew)
-            '''@@@@@@@@@@@@@@@'''
+            '''-----------------------------------------------------------------------------------------------------------'''
             for ee in range (n+1):
                 if ee==0:
                     config.Xi[:,0]=np.copy(config.Xinj)
@@ -642,7 +635,7 @@ while inj_Pvol_not_round < NPV:
                     for react in range(ns):
                         if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:    
                             config.Xi[react,ee]=(cunit/config.Keq[react]/config.LandaS[react,ee])*np.prod((C[:,ee]*config.LandaP[:,ee]/cunit)**vrj[react,:].transpose())      
-            '''@@@@@@@@@@@@@@@'''
+            '''-----------------------------------------------------------------------------------------------------------'''
 
         else:
             config.Xi=np.copy(Xiformer)
@@ -653,10 +646,10 @@ while inj_Pvol_not_round < NPV:
 
     'End of while loop and start of volfrac update   '
     vol_former=np.copy(volfrac)
-    if shart==2 and neg_dt==0 and sh_vol==0:
+    if shart==False and neg_dt==0 and sh_vol==0:
         for_rme_in_inlet=cal_C_Equation(0,0,P,C,config.por0)
         for ee in range(n+1):
-            for com in range(nm):
+            for com in range(nMineral):
                 ggg=1
                 volfrac[com,ee]=volfrac[com,ee]-ggg*config.dt*MV_m[com]*sum(vm[com,:]*config.rme[:,ee])                    
                 if volfrac[com,ee]<critVOL:
@@ -666,21 +659,24 @@ while inj_Pvol_not_round < NPV:
             volfrac=np.copy(vol_former)
         elif neg_dt==0:
             for ee in range(n+1):
-                for com in range(nm):
+                for com in range(nMineral):
                     if volfrac[com,ee]<critVOL+Dvol:
                         volfrac[com,ee]=critVOL
     if neg_dt==0:
         config.por0f=np.copy(config.por0)
         for ee in range(n+1):
-            config.por0[0,ee]=1-sum(volfrac[:,ee])/nm
+            config.por0[0,ee]=1-sum(volfrac[:,ee])/nMineral
         config.por0[0,0]=np.copy(por0[0,1])
     else:
         config.Xi=np.copy(Xiformer)
         C=np.copy(Cformer)
         P=np.copy(config.Pformer)  
         config.por0=np.copy(por0f)
+    
+    
+    
             
-                            
+    'Save the values'                        
     if neg_dt==0 and shomarE==0:
         eltime=np.copy(eltime+config.dt)
         
@@ -737,8 +733,7 @@ while inj_Pvol_not_round < NPV:
             xPV_amount=xPV[-1]+config.Q*config.dt/config.Ax/L/config.Porosity_i
             xPV.append(xPV_amount)
             
-        '''%%%%%%%%%%%%%%%%%%%%%%%%   average   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5'''
-        #%% 
+        'Calculate the average values ---------------------------------------------------------------------------------'  
         if ith_point < N_Exp_Data-1:
             xPVexp=0;
             xPVsim=0;
@@ -762,8 +757,8 @@ while inj_Pvol_not_round < NPV:
                     Clast_ave=np.column_stack((Clast_ave,CQdt/Qdt))
 
             
-        '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5'''
-        #%%  
+        '''-----------------------------------------------------------------------------------------------------------'''
+          
     
 
         
@@ -771,7 +766,7 @@ while inj_Pvol_not_round < NPV:
         inj_Pvol=int(xPV_amount)
         inj_Pvol_not_round=np.copy(xPV[-1])
         
-        '''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
+        '''-----------------------------------------------------------------------------------------------------------'''
         if inj_Pvol_not_round>=2: #and  Step2>inj_Pvol_not_round:
             
             config.Q=0.00001
@@ -782,7 +777,7 @@ while inj_Pvol_not_round < NPV:
             if ShutInTime > TotalShutInTime:
                 inj_Pvol_not_round=NPV+5;
 
-        '''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
+        '''-----------------------------------------------------------------------------------------------------------'''
 
         
         if inj_Pvol>int(numpv):
