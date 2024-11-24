@@ -28,7 +28,7 @@ def cal_C_Equation(j,i,P,C,por0):
     n          = config.n
     Cl         = config.Cl
     npr        = config.npr
-    nm         = config.nm
+    nMineral   = config.nMineral
     Keq        = config.Keq
     cunit      = config.cunit
     vrj        = config.vrj
@@ -62,7 +62,7 @@ def cal_C_Equation(j,i,P,C,por0):
     config.R=np.zeros([npr,n+1])
     
     
-    if nm>0:   # is there any hetro reaction or not?
+    if nMineral>0:   # is there any hetro reaction or not?
 
         rm=[]
 
@@ -98,7 +98,7 @@ def cal_C_Equation(j,i,P,C,por0):
 
         config.R[j,i]=(sum(vsolid[:,j]*rme[:,i])+rmi);   
   
-    elif nm==0:
+    elif nMineral==0:
         config.R[j,i]=0
     
     if ns==0:
