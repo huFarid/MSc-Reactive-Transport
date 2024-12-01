@@ -31,7 +31,7 @@ def cal_C_Equation(j,i,P,C,por0):
     nMineral   = config.nMineral
     Keq        = config.Keq
     cunit      = config.cunit
-    vrj        = config.vrj
+    vrj        = config.Stoichiometry
     Ksolid     = config.Ksolid
     vmi        = config.vmi
     vsolid     = config.vsolid

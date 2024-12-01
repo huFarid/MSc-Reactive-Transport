@@ -1,6 +1,10 @@
 """
 @author: Hossein
 """
+    
+# ----------------------------------------------------------------------------------------
+# Import the external functions
+# ----------------------------------------------------------------------------------------
 
 import time
 import numpy as np
@@ -16,6 +20,12 @@ from utils import config
 
 
 N_Exp_Data=10;
+
+
+
+# ----------------------------------------------------------------------------------------
+# Initialize Variables and Begin Jacobian Calculation
+# ----------------------------------------------------------------------------------------
 
 
 
@@ -43,6 +53,10 @@ def fprim_landa(x_molal_H):
     return(prim)    
     
 '''-----------------------------------------------------------------------------------------------------------'''
+# ----------------------------------------------------------------------------------------
+# Initialize the variables
+# ----------------------------------------------------------------------------------------
+
 
 StartTime=time.time();
 dict_all_data={}
@@ -50,6 +64,12 @@ dict_all_data_necessary={}
     
 i_kRate = 300
 ''' Field Scale Parameters '''
+
+# ----------------------------------------------------------------------------------------
+# Defining the domain dimentions
+# ----------------------------------------------------------------------------------------
+
+
 kInjectionRate = 5;        # gal/min
 kArea          = 1.053589; # m2
 kLength        = 141;      # m
@@ -59,17 +79,7 @@ n              = 70;       # number of grid blocks - 1
 
 
 
-const_1 = 2900
-const_2 = 2900
-const_3 = 2900
 
-k_1     = 10**-1.08
-k_2     = 10**-3.96
-k_3     = 10**-4.82
-k_4     = 1
-k_5     = 1
-
-k123=[const_1* k_1  ,  const_2*k_2   ,   const_3*k_3  , k_4,  k_5] # Reaction rate constants
 
 
 
@@ -114,6 +124,24 @@ Nhydro0=0
 C0[:]=[number*cunit for number in C0]   #''' Convert to mmole per litr
   
 
+# ----------------------------------------------------------------------------------------
+# Parameters related to the reaction network
+# ----------------------------------------------------------------------------------------
+
+const_1 = 2900
+
+
+k_1     = 10**-1.08
+k_2     = 10**-3.96
+k_3     = 10**-4.82
+k_4     = 1
+k_5     = 1
+
+k123=[const_1* k_1  ,  const_1*k_2   ,   const_1*k_3  , k_4,  k_5] # Reaction rate constants
+
+
+
+
 km=[0.001,0.001,0.001,1]; # 
 
 Ksolid=10**8.23
@@ -128,7 +156,7 @@ Keq=[10**-4.757   ,   10**16.67   , 10**6.34, 10**13.99 , 10**-0.77 , 10**13.35 
 ''' Homogeneous Reactions'''
 
 ''' P:            'H+',    'Ca2+' ,'H2CO3*' ,CH3COO- '''
-vrj=np.asarray([[    1 ,    0,      0  ,   1],  #1 CH3COOH
+Stoichiometry=np.asarray([[    1 ,    0,      0  ,   1],  #1 CH3COOH
                 [   -2 ,    0,      1  ,   0],  #2 CO3--
                 [   -1 ,    0,      1  ,   0],  #3 HCO3-
                 [   -1 ,    0,      0  ,   0],  #4 OH-
@@ -137,7 +165,6 @@ vrj=np.asarray([[    1 ,    0,      0  ,   1],  #1 CH3COOH
                 [   -2 ,    1,      1  ,   0],  #7 CaCO3 (aq)
                 [   -1 ,    1,      0  ,   0],  #8 Ca(OH)+
                 [   -1 ,    1,      1  ,   0]]) #9 Ca(HCO3)-
-kzarib   = 1
 Nforacid = 0   
 ' The first form # x2 + (Keq+H0)*x - Keq*Macid=0'
 
@@ -148,15 +175,15 @@ wp_acid         = 5              #
 M_weight_acid   = 60.052         # g/mol
 Macid           = (wp_acid/M_weight_acid)/((100-wp_acid)/1000) #
 
-shart=True
-while (shart==True):
+criteria=True
+while (criteria==True):
     aa1=f_landa(x_molal_H)
     aa2=fprim_landa(x_molal_H)
     
     x_molal_H_new=x_molal_H-aa1/aa2
     delta=x_molal_H_new-x_molal_H
     if abs(delta)<0.00000001:
-        shart=False
+        criteria=False
     else:
         x_molal_H=x_molal_H_new
 
@@ -213,8 +240,8 @@ vb=np.copy(abs((vsolid+abs(vsolid))/2))
 Nvf=np.zeros((0,ns))
 Nvb=np.zeros((0,ns))
 
-vrjf=np.copy(abs((vrj-abs(vrj))/2))
-vrjb=np.copy((vrj+abs(vrj))/2)
+vrjf=np.copy(abs((Stoichiometry-abs(Stoichiometry))/2))
+vrjb=np.copy((Stoichiometry+abs(Stoichiometry))/2)
 
 Nvf=((vrjf!=0).sum(1))+1
 Nvb=(vrjb!=0).sum(1)
@@ -269,20 +296,20 @@ KK      = np.zeros([4, n+1])
 
 eltime   = 0
 ntime    = 0
-shomardt = 0
+counterdt = 0
 dt       = np.copy(dt1)
 
 Xi       = np.zeros((ns,n+1))
 Xiformer = np.copy(Xi)
 Xee      = np.zeros((ns,1))
 timestep = 0
-neg_dt   = 0
+neg_dt   = False # Is dt so high that cause getting negative P or C values? True or False?
 Pnew     = np.zeros(P.shape)
 Pnew[0,-1] = Patm
 
 Cnew      = np.zeros(C.shape)
 Cnew[:,0] = np.copy(Cinj)
-shomarE   = 0
+counterE   = 0
 inj_Pvol  = 0
 inj_Pvol_not_round=0;
 ShutInTime=0;
@@ -368,7 +395,7 @@ config.npr        = npr
 config.nMineral   = nMineral
 config.Keq        = Keq
 config.cunit      = cunit
-config.vrj        = vrj
+config.Stoichiometry= Stoichiometry
 config.vf         = vf
 config.vmif       = vmif
 config.vb         = vb
@@ -471,20 +498,20 @@ while inj_Pvol_not_round < NPV:
     config.por0f = np.copy(config.por0)
     
     ' Time Step Updates'
-    if neg_dt == 1 or shomarE == 1:
-        shomarE = 0
+    if neg_dt == True or counterE == 1:
+        counterE = 0
         config.dt /= dt_reduce
-        neg_dt = 0
+        neg_dt = False
         timestep -= 1
-        shomardt = 0
+        counterdt = 0
     
     timestep += 1
-    shomardt += 1
+    counterdt += 1
     
     ' Adjust Time Step Size'
     if config.dt < dtc:  # Start refinement
-        if shomardt % perdt == 0:
-            shomardt = 0
+        if counterdt % perdt == 0:
+            counterdt = 0
             config.dt *= orderdt
     
     if config.dt > dtc:
@@ -498,7 +525,7 @@ while inj_Pvol_not_round < NPV:
     if ns>0:
         for ee in range (n+1):
             if ee==0:
-                U[:,0]=config.Cinj+(vrj.transpose()*config.Xinj).sum(axis=1)
+                U[:,0]=config.Cinj+(Stoichiometry.transpose()*config.Xinj).sum(axis=1)
             else:
                 Xee=config.Xi[:,ee]
                 Xnon0=[1 if wq!=0 else 0 for wq in Xee]
@@ -506,11 +533,11 @@ while inj_Pvol_not_round < NPV:
                 Ncb=((vrjb*C[:,ee])!=0).sum(1)         # number of non-zero concentrations
                 for react in range(ns):
                     if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:    
-                        config.Xi[react,ee]=(cunit/config.Keq[react]/config.LandaS[react,ee])*np.prod((C[:,ee]*config.LandaP[:,ee]/cunit)**vrj[react,:].transpose())      
+                        config.Xi[react,ee]=(cunit/config.Keq[react]/config.LandaS[react,ee])*np.prod((C[:,ee]*config.LandaP[:,ee]/cunit)**Stoichiometry[react,:].transpose())      
                 
                 
                 zigma=0
-                cal=vrj.transpose()*config.Xi[:,ee]
+                cal=Stoichiometry.transpose()*config.Xi[:,ee]
                 zigma=cal.sum(axis=1)
                 U[:,ee]=C[:,ee]+zigma
 
@@ -523,8 +550,8 @@ while inj_Pvol_not_round < NPV:
   
     
     C[:,0]=np.copy(config.Cinj)
-    shomar=0
-    shart=True
+    counter=0
+    criteria=True
     sh_neg=1
     sh=0
     vol_former=np.copy(volfrac)
@@ -533,39 +560,87 @@ while inj_Pvol_not_round < NPV:
     
     
     
-    'Calculate the values of Jacobian Matrix'
-    while shart==True:
-        sh+=1
+    # ----------------------------------------------------------------------------------------
+    # Initialize Variables and Begin Jacobian Calculation
+    # ----------------------------------------------------------------------------------------
 
+    while criteria==True:
+        
+        """
+        Compute the full Jacobian matrix and the RHS vector for a system of equations.
+    
+        Parameters:
+        - npr: Number of primary variables
+        - n: Number of grid blocks
+        - P: Pressure 
+        - C: Concentration
+        - config: Configuration object containing parameters
+    
+        Returns:
+        - finalJacobian: The full Jacobian matrix
+        - b: The RHS vector
+        """
+        
+        'Jacobian Matrix--------------------------------------------------------------------'
+        sh+=1
         for j in range(npr):
+            # Initialize Jacobian matrix for concentration equations
             C_Jacobian=np.zeros((n,n))
             for k in range (npr):
                 rr=time.time()
+                
+                # Compute the sub-Jacobian matrix for concentration
                 C_Jacobian = cal_C_Jacobian(j,k,P,C,config.por0)
+                
+                # Build the main Jacobian by horizontally stacking submatrices
                 if k==0:
                     Jacobian_Main=np.copy(C_Jacobian)
                 elif k>0:
-                    Jacobian_Main=np.hstack((Jacobian_Main,C_Jacobian))                
+                    Jacobian_Main=np.hstack((Jacobian_Main,C_Jacobian))
+                    
+            # Append C-P Jacobian to the main Jacobian matrix
             Jacobian_Main=np.hstack((Jacobian_Main,cal_C_P_Jacobian(j,k,P,C,config.por0)))
+            
+            
+            # Vertically stack the main Jacobian matrices for all primary variables
             if j==0:
                 Jacobian=np.copy(Jacobian_Main)
             elif j>0:
                 Jacobian=np.vstack((Jacobian,Jacobian_Main))
+                
+        # Append the last section of the Jacobian matrix for pressure equations
         lastSectionOfJacob=np.hstack((np.zeros((n,(npr)*(n))),cal_P_Jacobian(P,config.por0)))
         finalJacobMatrix=np.vstack((Jacobian,lastSectionOfJacob))
 
+
+        # ----------------------------------------------------------------------------------------
+        # Calculate the RHS Vector
+        # ----------------------------------------------------------------------------------------
         
-        nu=npr*n+n;     # number PERM,volfrac,por0of unknowns 
-        b=np.zeros((nu,1))
-        ss=-1
-        for j in range(npr):    
-            for i in range (1,n+1):    
-                ss+=1;
-                b[ss,0]=-cal_C_Equation(j,i,P,C,config.por0)# 
+        # Total number of unknowns ( concentrations and pressure)
+        nu = npr * n + n  # npr: number of primary variables
         
-        for i in range (n):
-            ss+=1
-            b[ss,0]=-cal_P_Equation(i,P,config.por0)# %P
+        # Initialize the RHS vector
+        b = np.zeros((nu, 1))  # RHS vector to store residuals
+        
+        # Initialize the counter for indexing the RHS vector
+        ss = -1
+        
+        # Compute residuals for the concentration equations and fill in the corresponding entries in b
+        for j in range(npr):  # Loop over primary variables
+            for i in range(1, n + 1):  # Loop over grid blocs
+                ss += 1
+                # Calculate the residual
+                b[ss, 0] = -cal_C_Equation(j, i, P, C, config.por0)
+        
+        # Compute residuals for the pressure equations and fill in the corresponding entries in b
+        for i in range(n):  
+            ss += 1
+            # Calculate the pressure residual for blocks and store it in the RHS vector
+            b[ss, 0] = -cal_P_Equation(i, P, config.por0)
+        
+        # At this point, b contains the full RHS residual vector for the system
+
         
         'Calculate the Concentration and Pressure changes'
         dpc=np.linalg.solve(finalJacobMatrix,b)
@@ -595,32 +670,32 @@ while inj_Pvol_not_round < NPV:
             ss+=1
             fgnew[ss,0]=cal_P_Equation(i,Pnew,config.por0)# %P
                 
-        shomar+=1
+        counter+=1
 
-        shart=False
+        criteria=False
         if np.amax(fgnew)>0.0002:
-            shart=True
+            criteria=True
         
-        if sh_neg==1 and shart==False:
+        if sh_neg==1 and criteria==False:
             sh_neg=2
             C_negetive=(Cnew-np.abs(Cnew))
             for ee in range(n+1):   # grid
                 for com in range(C.shape[0]):   # component
                     if C_negetive[com][ee] !=0:
                         print('C[{}][{}] is negetive.'.format(com,ee))                        
-                        neg_dt=1
+                        neg_dt=True
 
-        sh_vol=0    
-        if shomar>=30 or sum(np.abs(fgnew))>=10**9:
-            shomarE=1
-            shart=False
-            sh_vol=1
+        sh_vol=False    
+        if counter>=30 or sum(np.abs(fgnew))>=10**9:
+            counterE=1
+            criteria=False
+            sh_vol=True
             config.Xi=np.copy(Xiformer)
             C=np.copy(Cformer)
             P=np.copy(config.Pformer)
             config.por0=np.copy(por0f)
             
-        if neg_dt==0 and sh_vol==0: 
+        if neg_dt==False and sh_vol==False: 
             C=np.copy(Cnew)
             P=np.copy(Pnew)
             '''-----------------------------------------------------------------------------------------------------------'''
@@ -634,7 +709,7 @@ while inj_Pvol_not_round < NPV:
                     Ncb=((vrjb*C[:,ee])!=0).sum(1)         # number of non-zero concentrations
                     for react in range(ns):
                         if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:    
-                            config.Xi[react,ee]=(cunit/config.Keq[react]/config.LandaS[react,ee])*np.prod((C[:,ee]*config.LandaP[:,ee]/cunit)**vrj[react,:].transpose())      
+                            config.Xi[react,ee]=(cunit/config.Keq[react]/config.LandaS[react,ee])*np.prod((C[:,ee]*config.LandaP[:,ee]/cunit)**Stoichiometry[react,:].transpose())      
             '''-----------------------------------------------------------------------------------------------------------'''
 
         else:
@@ -646,23 +721,23 @@ while inj_Pvol_not_round < NPV:
 
     'End of while loop and start of volfrac update   '
     vol_former=np.copy(volfrac)
-    if shart==False and neg_dt==0 and sh_vol==0:
+    if criteria==False and neg_dt==False and sh_vol==False:
         for_rme_in_inlet=cal_C_Equation(0,0,P,C,config.por0)
         for ee in range(n+1):
             for com in range(nMineral):
                 ggg=1
                 volfrac[com,ee]=volfrac[com,ee]-ggg*config.dt*MV_m[com]*sum(vm[com,:]*config.rme[:,ee])                    
                 if volfrac[com,ee]<critVOL:
-                    neg_dt==1
+                    neg_dt==True
                     volfrac=np.copy(vol_former)
-        if neg_dt==1:
+        if neg_dt==True:
             volfrac=np.copy(vol_former)
-        elif neg_dt==0:
+        elif neg_dt==False:
             for ee in range(n+1):
                 for com in range(nMineral):
                     if volfrac[com,ee]<critVOL+Dvol:
                         volfrac[com,ee]=critVOL
-    if neg_dt==0:
+    if neg_dt==False:
         config.por0f=np.copy(config.por0)
         for ee in range(n+1):
             config.por0[0,ee]=1-sum(volfrac[:,ee])/nMineral
@@ -677,7 +752,7 @@ while inj_Pvol_not_round < NPV:
     
             
     'Save the values'                        
-    if neg_dt==0 and shomarE==0:
+    if neg_dt==False and counterE==0:
         eltime=np.copy(eltime+config.dt)
         
         PERM=np.zeros([1,n+1])
@@ -790,7 +865,7 @@ while inj_Pvol_not_round < NPV:
             numpv+=1
         print('time=',np.round(eltime,1),'s ', 'iPV=',np.round(inj_Pvol_not_round, 3),', timestep=',timestep,'dt=',config.dt,'Second')
 
-    if neg_dt==0 and shomarE==0:       
+    if neg_dt==False and counterE==0:       
         with open('myfile.pkl','wb') as PandC:
             pickle.dump([KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast_ave,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,n,eltime,cunit,dx,km,pvs,pvf,PERM,volfrac,config.por0,config.rme,permP],PandC)
     
