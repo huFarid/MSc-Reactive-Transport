@@ -212,113 +212,108 @@ vsolid=np.array([[ -2  ,  1    ,   1,  0 ]])
 
 
 ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
-vmi=np.array([[ 0. , 0., 0.,0.,0.,0.,0.,0.]]) 
+vmi = np.array([[ 0. , 0., 0.,0.,0.,0.,0.,0.]]) 
     
-vmif=np.copy(abs((vmi-abs(vmi))/2))
-vmib=np.copy(abs((vmi+abs(vmi))/2))
+vmif            = np.copy(abs((vmi - abs(vmi)) / 2))
+vmib            = np.copy(abs((vmi + abs(vmi)) / 2))
 
-vf=np.zeros(vsolid.shape);
-vf=np.copy(abs((vsolid-abs(vsolid))/2))
-vb=np.copy(abs((vsolid+abs(vsolid))/2))
+vf              = np.zeros(vsolid.shape)
+vf              = np.copy(abs((vsolid - abs(vsolid)) / 2))
+vb              = np.copy(abs((vsolid + abs(vsolid)) / 2))
 
-Nvf=np.zeros((0,nSecondary))
-Nvb=np.zeros((0,nSecondary))
+Nvf             = np.zeros((0, nSecondary))
+Nvb             = np.zeros((0, nSecondary))
 
-vrjf=np.copy(abs((Stoichiometry-abs(Stoichiometry))/2))
-vrjb=np.copy((Stoichiometry+abs(Stoichiometry))/2)
+vrjf            = np.copy(abs((Stoichiometry - abs(Stoichiometry)) / 2))
+vrjb            = np.copy((Stoichiometry + abs(Stoichiometry)) / 2)
 
-Nvf=((vrjf!=0).sum(1))+1
-Nvb=(vrjb!=0).sum(1)
+Nvf             = ((vrjf != 0).sum(1)) + 1
+Nvb             = (vrjb != 0).sum(1)
 
-vm=np.array([[1]]); #
+vm              = np.array([[1]])  # 
 
-C=np.arange(nPrimary*(n+1)).reshape((nPrimary,n+1))
-C=C*[0.]
+C               = np.arange(nPrimary * (n + 1)).reshape((nPrimary, n + 1))
+C               = C * [0.]
 
-Cnd=np.zeros((nPrimary*n,nPrimary,n))
-for yy in range(nPrimary*n):
-    Cnd[yy,]
+Cnd             = np.zeros((nPrimary * n, nPrimary, n))
+for yy in range(nPrimary * n):
+    Cnd[yy, ]
 
-for ee in range(n+1):
-    C[:,ee]=C0
-C[:,0]=Cinj
-
-
-Diffusion  = 5*10**-5; #   % Diffusion coefficient [cm2/s]
-
-Cl = 46.4*10**-6; 
-
-por0=np.ones([1,n+1])*initialPorosity;
-
-permP = []
-vis   = 1;      #   % cp
-Pi    = 2175;      # % initial Pressure   [atm]
-Patm  = 2175;
+for ee in range(n + 1):
+    C[:, ee]     = C0
+C[:, 0]         = Cinj
 
 
-roi = 1;    #% initial density  [g/cm3]
-ro  = np.ones([1,n+1])*roi;
+Diffusion       = 5*10**-5     #   % Diffusion coefficient [cm2/s]
 
-P=np.ones([1,n+1])*Pi;
+Cl              = 46.4*10**-6 
 
-aa=-1/vis/dx**2/2;
-bb=-Diffusion/dx**2;
+por0            = np.ones([1, n+1]) * initialPorosity
 
+permP           = []
+vis             = 1           #   % cp
+Pi              = 2175        #   % initial Pressure   [atm]
+Patm            = 2175
 
-Pformer = np.copy(P);
-Cformer = np.copy(C);
+roi             = 1           #   % initial density  [g/cm3]
+ro              = np.ones([1, n+1]) * roi
 
-por0f   = np.copy(por0);
-U       = np.zeros(C.shape)
-Cpv     = np.zeros((nPrimary,1))
-numPV   = 0
-C_all   = []
-rme     = np.zeros([nMineral,n+1])
-rmef    = np.zeros([nMineral,n+1])
-rmeb    = np.zeros([nMineral,n+1])
-KK      = np.zeros([4, n+1])
+P               = np.ones([1, n+1]) * Pi
 
-elapsed_time   = 0
-dt_Counter = 0
-dt       = np.copy(dt_Initial)
+aa              = -1 / vis / dx**2 / 2
+bb              = -Diffusion / dx**2
 
-Xi       = np.zeros((nSecondary,n+1))
-Xiformer = np.copy(Xi)
-Xee      = np.zeros((nSecondary,1))
-timestep = 0
-negativeResult   = False # Is dt so high that cause getting negative P or C values? True or False?
-Pnew     = np.zeros(P.shape)
-Pnew[0,-1] = Patm
+Pformer         = np.copy(P)
+Cformer         = np.copy(C)
 
-Cnew      = np.zeros(C.shape)
-Cnew[:,0] = np.copy(Cinj)
-NotConverged   = False
+por0f           = np.copy(por0)
+U               = np.zeros(C.shape)
+Cpv             = np.zeros((nPrimary, 1))
+numPV           = 0
+C_all           = []
+rme             = np.zeros([nMineral, n+1])
+rmef            = np.zeros([nMineral, n+1])
+rmeb            = np.zeros([nMineral, n+1])
+KK              = np.zeros([4, n+1])
+
+elapsed_time    = 0
+dt_Counter      = 0
+dt              = np.copy(dt_Initial)
+
+Xi              = np.zeros((nSecondary, n+1))
+Xiformer        = np.copy(Xi)
+Xee             = np.zeros((nSecondary, 1))
+timestep        = 0
+negativeResult  = False      # Is dt so high that it causes negative P or C values? True or False?
+Pnew            = np.zeros(P.shape)
+Pnew[0, -1]     = Patm
+
+Cnew            = np.zeros(C.shape)
+Cnew[:, 0]      = np.copy(Cinj)
+NotConverged    = False
 injectedPoreVolume  = 0
-inj_Pvol_not_round=0;
-ShutInTime=0;
-TotalShutInTime = 0.5*24*60*60;
+inj_Pvol_not_round   = 0
+ShutInTime      = 0
+TotalShutInTime = 0.5 * 24 * 60 * 60
 
+critVOL         = 0
+Dvol            = 10**-8
+VV              = np.ones((1, n+1)) * critVOL
 
-critVOL = 0
-Dvol    = 10**-8
-VV      = np.ones((1,n+1))*critVOL
+TtoPV           = 0
 
-TtoPV  = 0
+Asf             = np.zeros(As.shape)
+Asb             = np.zeros(As.shape)
 
+shPH            = 0
+Adam            = 1000
 
-Asf = np.zeros(As.shape)
-Asb = np.zeros(As.shape)
+Q               = 75.7682 * kInjectionRate  
+uinj            = Q / Ax
 
+times           = nPoreVolume * Ax * L * initialPorosity / Q + 10
+kkkkk           = 1
 
-
-shPH  = 0
-Adam  = 1000
-        
-Q    = 75.7682*kInjectionRate;  
-uinj = Q/Ax
-
-times=nPoreVolume*Ax*L*initialPorosity/Q+10
-kkkkk=1
 
 print(' rate constans:  ', k123,'\n', 'nSecondary=',nSecondary, '\n', 'np=',nPrimary, '\n','Ksolid: ', Ksolid)
 print(' Macid:',Macid,'\n', 'wp_acid',wp_acid,'\n','inletpH', inletpH)
@@ -330,32 +325,22 @@ print(' Area (m2):',kArea,'\n', "Length(m):",kLength,'\n', 'Rate (gal/min):', kI
 
 
 '''-----------------------------------------------------------------------------------------------------------'''
-ith_point = 0
-Clast_ave = np.zeros([nPrimary,1])
-Qdt  = 0
-CQdt = 0
-'''-----------------------------------------------------------------------------------------------------------'''
-
-
-
-
 Cpv=np.copy(C[:,-1].reshape((nPrimary,1)))
 pHpv=np.copy(C[1,-1])  
 
 
 
-
 'Initialize the Global variables'
 
-config.dt   = dt
-config.Q    = Q
-config.Ax   = Ax
-config.n    = n
-config.Patm = Patm
-config.roi  = roi
-config.por0f = por0f
-config.Cl   = Cl
-config.KK   = KK
+config.dt         = dt
+config.Q          = Q
+config.Ax         = Ax
+config.n          = n
+config.Patm       = Patm
+config.roi        = roi
+config.por0f      = por0f
+config.Cl         = Cl
+config.KK         = KK
 config.initialPorosity = initialPorosity
 config.Xinj       = Xinj
 config.k123       = k123
@@ -372,7 +357,7 @@ config.As         = As
 config.Cinj       = Cinj
 config.n          = n
 config.Cl         = Cl
-config.nPrimary        = nPrimary
+config.nPrimary   = nPrimary
 config.nMineral   = nMineral
 config.Keq        = Keq
 config.cUnit      = cUnit
@@ -385,7 +370,7 @@ config.Ksolid     = Ksolid
 config.cR         = cR
 config.vmi        = vmi
 config.vsolid     = vsolid
-config.nSecondary         = nSecondary
+config.nSecondary = nSecondary
 config.vrjf       = vrjf
 config.vrjb       = vrjb
 config.Nvf        = Nvf
@@ -405,7 +390,7 @@ config.por0       = por0
 
 
 while inj_Pvol_not_round < nPoreVolume:
-    '''-----------------------------------------------------------------------------------------------------------'''
+    '''------------------------------------------------------------------------------------------------------------------------'''
     
     # Electrical charge
     # Primary and secondary charges
@@ -421,7 +406,7 @@ while inj_Pvol_not_round < nPoreVolume:
     aSec = np.array([0, 4.5, 4, 3.5, 4.4, 0, 4.4, 4.4])
     bSec = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     
-    ' Initialize arrays of ionic activities'
+    ' Initialize arrays of ionic activities------------------------------------------------------------------------------------'
     I_P = np.zeros([1, n + 1])
     I_S = np.zeros([1, n + 1])
     I = np.zeros([1, n + 1])
@@ -430,13 +415,13 @@ while inj_Pvol_not_round < nPoreVolume:
     LandaS = np.ones([nSecondary, n + 1])
     config.LandaS = LandaS
     
-    ' Ionic Strength Calculation'
+    ' Ionic Strength Calculation------------------------------------------------------------------------------------------------'
     for gridNumber in range(n + 1):
         I_P[0, gridNumber] = np.copy((0.5 * abs(C[:, gridNumber]) / cUnit * (pri_charge**2)).sum())
         I_S[0, gridNumber] = np.copy((0.5 * abs(config.Xi[:, gridNumber]) / cUnit * (sec_charge**2)).sum())
         I[0, gridNumber] = I_P[0, gridNumber] + I_S[0, gridNumber]
     
-    ' Compute Landa of Primary Species'
+    ' Compute Landa of Primary Species-----------------------------------------------------------------------------------------'
     for gridNumber in range(n + 1):
         for j in range(nPrimary):
             config.LandaP[j, gridNumber] = np.exp(
@@ -444,7 +429,7 @@ while inj_Pvol_not_round < nPoreVolume:
                 (1 + 0.3294 * aPri[j] * (I[0, gridNumber]**0.5)) + bPri[j] * I[0, gridNumber]
             )
     
-    ' Compute Landa of Secondary Species'
+    ' Compute Landa of Secondary Species---------------------------------------------------------------------------------------'
     for gridNumber in range(n + 1):
         for j in range(nSecondary):
             config.LandaS[j, gridNumber] = np.exp(
@@ -452,25 +437,24 @@ while inj_Pvol_not_round < nPoreVolume:
                 (1 + 0.3294 * aSec[j] * (I[0, gridNumber]**0.5)) + bSec[j] * I[0, gridNumber]
             )
 
-    '''-----------------------------------------------------------------------------------------------------------'''
     
-    ' Calculate the Reactive Surface Area'
+    ' Calculate the Reactive Surface Area --------------------------------------------------------------------------------------'
     for yym in range(nMineral):
         for grid in range(n + 1):
             Asf[yym, grid] = As0[yym] * ((volfrac[yym, grid] / volfrac0[yym]) ** (2 / 3))
             Asb[yym, grid] = As0[yym] * ((config.por0[0, grid] / config.initialPorosity) ** (2 / 3))
     
-    ' Boundary Condition for Surface Area'
+    ' Boundary Condition for Surface Area--------------------------------------------------------------------------------------'
     Asb[0, :] = 0
     
     
-    ' Store Previous States'
+    ' Store Previous States ---------------------------------------------------------------------------------------------------'
     Xiformer = np.copy(config.Xi)
     Cformer = np.copy(C)
     config.Pformer = np.copy(P)
     config.por0f = np.copy(config.por0)
     
-    ' Time Step Updates'
+    ' Time Step Updates -------------------------------------------------------------------------------------------------------'
     if negativeResult == True or NotConverged == True:
         NotConverged = False
         config.dt /= dt_reduce
@@ -481,7 +465,7 @@ while inj_Pvol_not_round < nPoreVolume:
     timestep += 1
     dt_Counter += 1
     
-    ' Adjust Time Step Value'
+    ' Adjust Time Step Value---------------------------------------------------------------------------------------------------'
     if config.dt < dt_Critical:  # Start refinement
         if dt_Counter % perdt == 0:
             dt_Counter = 0
@@ -494,7 +478,7 @@ while inj_Pvol_not_round < nPoreVolume:
         print('This timestep value was not good.')
         break
 
-    'Calculate the total concentrations'
+    'Calculate the total concentrations---------------------------------------------------------------------------------------------------'
     if nSecondary>0:
         for ee in range (n+1):
             if ee==0:
@@ -554,7 +538,7 @@ while inj_Pvol_not_round < nPoreVolume:
         - b: The RHS vector
         """
         
-        'Jacobian Matrix--------------------------------------------------------------------'
+        'Jacobian Matrix--------------------------------------------------------------------------------------------------------------'
         
         for j in range(nPrimary):
             # Initialize Jacobian matrix for concentration equations
@@ -615,22 +599,23 @@ while inj_Pvol_not_round < nPoreVolume:
         # At this point, b contains the full RHS residual vector for the system
 
         
-        'Calculate the Concentration and Pressure changes'
+        'Calculate the Concentration and Pressure changes------------------------------------------------------------------------------'
         dpc=np.linalg.solve(finalJacobMatrix,b)
         
         
-        'Update Concentration'
+        'Update Concentration-----------------------------------------------------------------------------------------------------------'
         ss=0
         for j in range (nPrimary):
             for i in range(1,n+1):
                 Cnew[j,i]=C[j,i]+dpc[ss,0]
                 ss+=1
              
-        'Update Pressure     '
+        'Update Pressure ------------------------------------------------------------------------------------------------------------------'
         for i in range (n):
             Pnew[0,i]=P[0,i]+dpc[ss,0]
             ss+=1
-            
+        
+        'Calculate remaning matrix in Newton Raphson Method-------------------------------------------------------------------------------    '
         nu=nPrimary*n+n; # number of unknowns 
         fgnew=np.zeros((nu,1))
         ss=-1
@@ -645,10 +630,12 @@ while inj_Pvol_not_round < nPoreVolume:
                 
         counter+=1
 
+        'If the RHS matrix has high values,----------------------------------------------------------------------------------------------     '
         criteria=False
         if np.amax(fgnew)>0.0002:
             criteria=True
         
+        'Check if  there is any negative concentration value -------------------------------------------------------------------------  '
         if sh_neg==1 and criteria==False:
             sh_neg=2
             C_negetive=(Cnew-np.abs(Cnew))
@@ -657,7 +644,7 @@ while inj_Pvol_not_round < nPoreVolume:
                     if C_negetive[com][ee] !=0:
                         print('C[{}][{}] is negetive.'.format(com,ee))                        
                         negativeResult=True
-
+        'If did not converge, restore the values from previous time step, and repeat with a new dt------------------------------------------------------------    '
         sh_vol=False    
         if counter>=30 or sum(np.abs(fgnew))>=10**9:
             NotConverged=True
@@ -667,11 +654,11 @@ while inj_Pvol_not_round < nPoreVolume:
             C=np.copy(Cformer)
             P=np.copy(config.Pformer)
             config.por0=np.copy(por0f)
-            
+
+        'If there was not problem, confirm the update concentration and pressure----------------------------------------------------------------'    
         if negativeResult==False and sh_vol==False: 
             C=np.copy(Cnew)
             P=np.copy(Pnew)
-            '''-----------------------------------------------------------------------------------------------------------'''
             for ee in range (n+1):
                 if ee==0:
                     config.Xi[:,0]=np.copy(config.Xinj)
@@ -692,7 +679,7 @@ while inj_Pvol_not_round < nPoreVolume:
             config.por0=np.copy(por0f)
 
 
-    'End of while loop and start of volfrac update   '
+    'End of while loop and start the update of mineral volume fractions  --------------------------------------------------------------'
     vol_former=np.copy(volfrac)
     if criteria==False and negativeResult==False and sh_vol==False:
         for_rme_in_inlet=cal_C_Equation(0,0,P,C,config.por0)
@@ -727,7 +714,7 @@ while inj_Pvol_not_round < nPoreVolume:
     
     
      
-    'Save the values'                        
+    'Save the value of all parameters for visualization--------------------------------------------------------------------------------'                        
     if negativeResult==False and NotConverged==False:
         elapsed_time=np.copy(elapsed_time+config.dt)
         
@@ -787,36 +774,7 @@ while inj_Pvol_not_round < nPoreVolume:
             xPV_amount=xPV[-1]+config.Q*config.dt/config.Ax/L/config.initialPorosity
             xPV.append(xPV_amount)
             
-        'Calculate the average values ---------------------------------------------------------------------------------'  
-        if ith_point < N_Exp_Data-1:
-            xPVexp=0;
-            xPVsim=0;
-            
-            if xPVsim <  xPVexp:
-                
-                CQdt+=C[:,-1]*config.dt*config.Q 
-                Qdt+=config.Q*config.dt
-                Clast_ave[:,ith_point]=CQdt/Qdt #Ave of the Concentration
-                
-            else: # Selection of a new point 
-                    
-                ith_point+=1
-                
-                if ith_point < N_Exp_Data-1:
-                    Qdt=0.0
-                    CQdt=0.0
-                    
-                    CQdt+=C[:,-1]*config.dt*config.Q
-                    Qdt+=config.Q*config.dt
-                    Clast_ave=np.column_stack((Clast_ave,CQdt/Qdt))
 
-            
-        '''-----------------------------------------------------------------------------------------------------------'''
-          
-    
-
-        
-          
         injectedPoreVolume=int(xPV_amount)
         inj_Pvol_not_round=np.copy(xPV[-1])
         
@@ -846,7 +804,7 @@ while inj_Pvol_not_round < nPoreVolume:
 
     if negativeResult==False and NotConverged==False:       
         with open('myfile.pkl','wb') as PandC:
-            pickle.dump([KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast_ave,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,n,elapsed_time,cUnit,dx,km,PERM,volfrac,config.por0,config.rme,permP],PandC)
+            pickle.dump([KK_all,Gama_P_Last_all,Gama_S_Last_all,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,n,elapsed_time,cUnit,dx,km,PERM,volfrac,config.por0,config.rme,permP],PandC)
     
     if C[0,-1]/1000>=10**-1:
         shPH=1
@@ -863,11 +821,11 @@ Final_Ca=np.row_stack((Final_Ca,The_Ca))
 
 
 with open('myfile_final1.pkl','wb') as PandC2:
-    pickle.dump([KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast_ave,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,C_all,n,elapsed_time,cUnit,dx,km,Cpv,pHPV,PERM,volfrac,config.por0,rme,permP],PandC2)
+    pickle.dump([KK_all,Gama_P_Last_all,Gama_S_Last_all,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,C_all,n,elapsed_time,cUnit,dx,km,Cpv,pHPV,PERM,volfrac,config.por0,rme,permP],PandC2)
 
 
-dict_all_data[i_kRate]           = [KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast_ave,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,C_all,n,elapsed_time,cUnit,dx,km,Cpv,pHPV,PERM,volfrac,config.por0,rme,permP]
-dict_all_data_necessary[i_kRate] = [KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast_ave,Clast,Xilast,xPV,n,elapsed_time,cUnit,dx]
+dict_all_data[i_kRate]           = [KK_all,Gama_P_Last_all,Gama_S_Last_all,Gama_P_all,Gama_S_all,rmb_all,rmf_all,Asb_all,Asf_all,volfrac_all,L,C_all,rme_all,R_all,Xi_all,por0_all,P_all,Perm_all,P,C,Clast,Xilast,xPV,C_all,n,elapsed_time,cUnit,dx,km,Cpv,pHPV,PERM,volfrac,config.por0,rme,permP]
+dict_all_data_necessary[i_kRate] = [KK_all,Gama_P_Last_all,Gama_S_Last_all,Clast,Xilast,xPV,n,elapsed_time,cUnit,dx]
 
 
 with open('dict_all_data.pkl','wb') as PC:
