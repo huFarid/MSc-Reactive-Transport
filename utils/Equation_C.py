@@ -27,15 +27,15 @@ def cal_C_Equation(j,i,P,C,por0):
     Cinj       = config.Cinj
     n          = config.n
     Cl         = config.Cl
-    npr        = config.npr
+    nPrimary   = config.nPrimary
     nMineral   = config.nMineral
     Keq        = config.Keq
-    cunit      = config.cunit
+    cUnit      = config.cUnit
     vrj        = config.Stoichiometry
     Ksolid     = config.Ksolid
     vmi        = config.vmi
     vsolid     = config.vsolid
-    ns         = config.ns
+    nSecondary = config.nSecondary
     vrjf       = config.vrjf
     vrjb       = config.vrjb
     Nvf        = config.Nvf
@@ -57,9 +57,9 @@ def cal_C_Equation(j,i,P,C,por0):
     
     Cr=np.copy(Cl);
 
-    U=np.zeros([npr,n+1]);
+    U=np.zeros([nPrimary,n+1]);
 
-    config.R=np.zeros([npr,n+1])
+    config.R=np.zeros([nPrimary,n+1])
     
     
     if nMineral>0:   # is there any hetro reaction or not?
@@ -69,9 +69,9 @@ def cal_C_Equation(j,i,P,C,por0):
         ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
         ''' S:  CH3COOH,  CO3--,  HCO3-,  OH-    '''     
 
-        aH     = (abs(LandaP[0,i]*C[0,i]/cunit))
-        aCa    = (abs(LandaP[1,i]*C[1,i]/cunit))
-        aH2CO3 = (abs(LandaP[2,i]*C[2,i]/cunit))
+        aH     = (abs(LandaP[0,i]*C[0,i]/cUnit))
+        aCa    = (abs(LandaP[1,i]*C[1,i]/cUnit))
+        aH2CO3 = (abs(LandaP[2,i]*C[2,i]/cUnit))
         
         IAP    =aH2CO3   * aCa / (aH**2)
         
@@ -101,9 +101,9 @@ def cal_C_Equation(j,i,P,C,por0):
     elif nMineral==0:
         config.R[j,i]=0
     
-    if ns==0:
+    if nSecondary==0:
         U=np.copy(C);
-    elif ns>0:
+    elif nSecondary>0:
         U[:,0]=Cinj+(vrj.transpose()*Xinj).sum(axis=1)
         
         if i==1:
@@ -114,9 +114,9 @@ def cal_C_Equation(j,i,P,C,por0):
                 Xnon0=[1 if wq!=0 else 0 for wq in Xee]
                 Ncf=(((vrjf*C[:,ee])!=0).sum(1))+Xnon0 
                 Ncb=((vrjb*C[:,ee])!=0).sum(1)         
-                for react in range(ns):
+                for react in range(nSecondary):
                     if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:
-                        config.Xi[react,ee]=(cunit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cunit)**vrj[react,:].transpose())     
+                        config.Xi[react,ee]=(cUnit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cUnit)**vrj[react,:].transpose())     
                     zigma=0
                     cal=vrj.transpose()*config.Xi[:,ee]
                     zigma=cal.sum(axis=1)
@@ -129,9 +129,9 @@ def cal_C_Equation(j,i,P,C,por0):
                 Xnon0=[1 if wq!=0 else 0 for wq in Xee]
                 Ncf=(((vrjf*C[:,ee])!=0).sum(1))+Xnon0 
                 Ncb=((vrjb*C[:,ee])!=0).sum(1)         
-                for react in range(ns):
+                for react in range(nSecondary):
                     if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:
-                        config.Xi[react,ee]=(cunit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cunit)**vrj[react,:].transpose())      
+                        config.Xi[react,ee]=(cUnit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cUnit)**vrj[react,:].transpose())      
                     zigma=0
                     cal=vrj.transpose()*config.Xi[:,ee]
                     zigma=cal.sum(axis=1)
@@ -143,9 +143,9 @@ def cal_C_Equation(j,i,P,C,por0):
                 Xnon0=[1 if wq!=0 else 0 for wq in Xee]
                 Ncf=(((vrjf*C[:,ee])!=0).sum(1))+Xnon0 
                 Ncb=((vrjb*C[:,ee])!=0).sum(1)         
-                for react in range(ns):
+                for react in range(nSecondary):
                     if Ncf[react]==Nvf[react] or Ncb[react]==Nvb[react]:
-                        config.Xi[react,ee]=(cunit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cunit)**vrj[react,:].transpose())      
+                        config.Xi[react,ee]=(cUnit/Keq[react]/LandaS[react,ee])*np.prod((C[:,ee]*LandaP[:,ee]/cUnit)**vrj[react,:].transpose())      
                     zigma=0          
                     cal=vrj.transpose()*config.Xi[:,ee]
                     zigma=cal.sum(axis=1)
