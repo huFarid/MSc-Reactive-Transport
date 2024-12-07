@@ -17,46 +17,11 @@ from utils.Equation_C import cal_C_Equation
 from utils.Equation_P import cal_P_Equation
 from utils.cal_Perm import cal_K
 from utils import config
+from utils.AcidDissociation_Function import AcidDissociation_Function
+from utils.AcidDissociation_Derevative import AcidDissociation_Derevative
 
 
-N_Exp_Data=10;
-
-
-
-# ----------------------------------------------------------------------------------------
-# Initialize Variables and Begin Jacobian Calculation
-# ----------------------------------------------------------------------------------------
-
-
-
-def f_landa(x_molal_H):
-    global Macid,keq_acid,gama1
-    
-    I=0.5*(x_molal_H+x_molal_H)
-    gama1=np.exp((-0.51*(I**0.5))/(1+0.3294*9*(I**0.5)))
-    gama2=np.exp((-0.51*(I**0.5))/(1+0.3294*4.5*(I**0.5)))
-
-    numm=(keq_acid)-gama1*gama2*(x_molal_H**2)/(Macid-x_molal_H)
-    
-    return(numm)
-'''-----------------------------------------------------------------------------------------------------------'''
-
- 
-def fprim_landa(x_molal_H):
-    
-    dx=0.00000001;
-    xmin=x_molal_H-dx
-    xplus=x_molal_H+dx
-    
-    prim=(f_landa(xplus)-f_landa(xmin))/2/dx;
-    
-    return(prim)    
-    
-'''-----------------------------------------------------------------------------------------------------------'''
-# ----------------------------------------------------------------------------------------
 # Initialize the variables
-# ----------------------------------------------------------------------------------------
-
 
 StartTime=time.time();
 dict_all_data={}
@@ -82,7 +47,7 @@ L              = kLength*100; #
 dx             = L/n;
 Ax             = kArea*10000#
 
-initialPorosity     = 0.39
+initialPorosity= 0.39
 volfrac0       = np.array([1 - initialPorosity])
 MV_m           = np.array([36.93 * 10**-6])
 dt_Initial     = k_Dt1 * 60       
@@ -92,7 +57,6 @@ dt_multiplier  = 2                # we will multiply dt with this whenever neces
 dt_reduce      = dt_multiplier          # when the Concentration is negative, we decrease dt value
 perdt          = 5                #
 cR             = 1                # convert mol/m3/s to mmole/cm3/s in rate equation
-
 
 nSecondary     = 8      # number of secondary species
 nMineral       = 1  # number of the minerals.   (It is connected to As, volfrac, vsolid,...)
@@ -152,53 +116,53 @@ Stoichiometry=np.asarray([[    1 ,    0,      0  ,   1],  #1 CH3COOH
 nForAcid = 0   
 ' The first form # x2 + (Keq+H0)*x - Keq*Macid=0'
 
-x_molal_H       = 0.004          # first geuss
-keq_acid        = Keq[nForAcid]
-density_of_acid = 1050           #g/Lit
-wp_acid         = 5              # 
-M_weight_acid   = 60.052         # g/mol
-Macid           = (wp_acid/M_weight_acid)/((100-wp_acid)/1000) #
+x_molal_H       = 0.004          # first geuss for hydrogen concentration as a result of acetic acid dissociation
+keq_acid        = Keq[nForAcid]  # Equilibrium constant of weak acid (acetic acid)
+density_of_acid = 1050           # g/Lit
+wp_acid         = 5              # Weight percent of acid
+M_weight_acid   = 60.052         # Molecular weight of acid (g/mol)
+Macid           = (wp_acid/M_weight_acid)/((100-wp_acid)/1000) # Molar amount of acid
+
+
+'Calculate the equilibrium concentration of Hydrogen ion using the Newto´-Raphson Method------------------------------------'
 
 criteria=True
 while (criteria==True):
-    aa1=f_landa(x_molal_H)
-    aa2=fprim_landa(x_molal_H)
+    function =AcidDissociation_Function(x_molal_H, keq_acid, Macid) # The function that its root needs to be found using the Newton Method 
+    function_derevative=AcidDissociation_Derevative(x_molal_H , keq_acid, Macid) # Derevative of the function that its root needs to be found using the Newton Method 
     
-    x_molal_H_new=x_molal_H-aa1/aa2
+    x_molal_H_new=x_molal_H-function/function_derevative # Newton Method
     delta=x_molal_H_new-x_molal_H
     if abs(delta)<0.00000001:
         criteria=False
     else:
         x_molal_H=x_molal_H_new
-
+'---------------------------------------------------------------------------------------------------'
 xPV=[]
 
-inletpH=-np.log10(x_molal_H*gama1)
+inletpH=-np.log10(x_molal_H*config.gama1)
 
 ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
-X0     = np.array([0,0,0,10**-7,0.,0,0,0])
-Xinj   = np.array([Macid-x_molal_H,0,0,10**-7,0.,0.,0.,0.])
-X0[:]  = [number*cUnit for number in X0]
-Xinj[:]= [number*cUnit for number in Xinj]
+X0     = np.array([0,0,0,10**-7,0.,0,0,0])                  # Initial concentration of secondary species
+Xinj   = np.array([Macid-x_molal_H,0,0,10**-7,0.,0.,0.,0.]) # injection concentration of secondary species
+X0[:]  = [number*cUnit for number in X0]     # change the unit 
+Xinj[:]= [number*cUnit for number in Xinj]   # change the unit
 
 
 ''' P: 'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
-Cinj   = np.array([x_molal_H,0,0,x_molal_H])
-Cinj[:]= [number*cUnit for number in Cinj]   
+Cinj   = np.array([x_molal_H,0,0,x_molal_H]) # injection concentration of primary species
+Cinj[:]= [number*cUnit for number in Cinj]   # injection concentration of primary species
 
 
-vB=Ax*dx;
-
-density = [2.71];
-M       = [100.09];
-Clast   = np.zeros([nPrimary,1])
-Xilast  = np.zeros([nSecondary,1])
-As0     = volfrac0*[10**4]
-
-K0 =2.3;    # % [darcy]
-
-As      = np.ones([nMineral,n+1]);
-volfrac = np.ones([nMineral,n+1]);
+vB=Ax*dx;                           # Bulk volume
+density = [2.71];                   # Density of calcite
+M       = [100.09];                 # Molecular weight of calcite
+Clast   = np.zeros([nPrimary,1])    # Primary species
+Xilast  = np.zeros([nSecondary,1])  # Secondary species
+As0     = volfrac0*[10**4]          # reactive Surface area
+K0 =2.3;                            #  Permeability [darcy]
+As      = np.ones([nMineral,n+1]);  # Reactive surface area
+volfrac = np.ones([nMineral,n+1]);  # Volume fraction of minerasl
 
 
 for ee in range(n+1):
@@ -208,7 +172,7 @@ for ee in range(n+1):
 ntotal=nSecondary+nPrimary
 
 ''' P:      'H+',    'Ca2+' ,    'H2CO3*' ,CH3COO- '''
-vsolid=np.array([[ -2  ,  1    ,   1,  0 ]])
+vsolid=np.array([[ -2  ,  1    ,   1,  0 ]]) # Stoichiometric coefficients of heterogeneous reaction
 
 
 ''' S:  CH3COOH,  CO3--,  HCO3-,  OH- ,Ca(Acet)- , CaCO3 (aq), Ca(OH)+,  Ca(HCO3)-  '''
@@ -218,22 +182,22 @@ vmif            = np.copy(abs((vmi - abs(vmi)) / 2))
 vmib            = np.copy(abs((vmi + abs(vmi)) / 2))
 
 vf              = np.zeros(vsolid.shape)
-vf              = np.copy(abs((vsolid - abs(vsolid)) / 2))
-vb              = np.copy(abs((vsolid + abs(vsolid)) / 2))
+vf              = np.copy(abs((vsolid - abs(vsolid)) / 2)) # Stoichiometric coefficients of forward heterogeneous reaction
+vb              = np.copy(abs((vsolid + abs(vsolid)) / 2)) # Stoichiometric coefficients of backward heterogeneous reaction
 
 Nvf             = np.zeros((0, nSecondary))
 Nvb             = np.zeros((0, nSecondary))
 
-vrjf            = np.copy(abs((Stoichiometry - abs(Stoichiometry)) / 2))
-vrjb            = np.copy((Stoichiometry + abs(Stoichiometry)) / 2)
+vrjf            = np.copy(abs((Stoichiometry - abs(Stoichiometry)) / 2)) # Stoichiometric coefficients of reactants in homogeneous reactions
+vrjb            = np.copy((Stoichiometry + abs(Stoichiometry)) / 2)      # Stoichiometric coefficients of products in homogeneous reactions
 
-Nvf             = ((vrjf != 0).sum(1)) + 1
-Nvb             = (vrjb != 0).sum(1)
+Nvf             = ((vrjf != 0).sum(1)) + 1 # number of the non-negative elements in vrjf +1
+Nvb             = (vrjb != 0).sum(1)       # number of the non-negative elements in vrjb
 
 vm              = np.array([[1]])  # 
 
-C               = np.arange(nPrimary * (n + 1)).reshape((nPrimary, n + 1))
-C               = C * [0.]
+C               = np.arange(nPrimary * (n + 1)).reshape((nPrimary, n + 1))# concentration of primary species
+C               = C * [0.] # initialize the concentrations
 
 Cnd             = np.zeros((nPrimary * n, nPrimary, n))
 for yy in range(nPrimary * n):
@@ -244,37 +208,34 @@ for ee in range(n + 1):
 C[:, 0]         = Cinj
 
 
-Diffusion       = 5*10**-5     #   % Diffusion coefficient [cm2/s]
 
-Cl              = 46.4*10**-6 
 
-por0            = np.ones([1, n+1]) * initialPorosity
+Diffusion = 5*10**-5                # Diffusion coefficient [cm2/s]
+Cl       = 46.4*10**-6              # Liquid compressibility
+por0     = np.ones([1, n+1]) * initialPorosity  # Initial porosity
+permP    = []                       # Placeholder for permeability-related values
+vis      = 1                        # Fluid viscosity [cp]
+Pi       = 2175                     # Initial pressure [atm]
+Patm     = 2175                     # Atmospheric pressure (reference)
+roi      = 1                        # Initial density [g/cm3]
+ro       = np.ones([1, n+1]) * roi  # Density array initialized with initial density
+P        = np.ones([1, n+1]) * Pi   # Pressure array initialized with initial pressure
+aa       = -1 / vis / dx**2 / 2     # Coefficient in Darcy's equation
+bb       = -Diffusion / dx**2       # Coefficient in Darcy's equation
+Pformer  = np.copy(P)               # Pressure in the previous state
+Cformer  = np.copy(C)               # Concentration in the previous state
+por0f    = np.copy(por0)            # Porosity in the previous state
+U        = np.zeros(C.shape)        # Total concentration initialized to zero
+Cpv      = np.zeros((nPrimary, 1))  # Concentration of primary species
+numPV    = 0                        # Number of pore volumes of the injected fluid
+C_all    = []                       # List to store concentrations of all primary and secondary species
 
-permP           = []
-vis             = 1           #   % cp
-Pi              = 2175        #   % initial Pressure   [atm]
-Patm            = 2175
+rme      = np.zeros([nMineral, n+1])  # Mineral reaction rates
+rmef     = np.zeros([nMineral, n+1])  # Forward mineral reaction rates (dissolution)
+rmeb     = np.zeros([nMineral, n+1])  # Backward mineral reaction rates (precipitation)
+KK       = np.zeros([4, n+1])        # Placeholder for additional coefficients
 
-roi             = 1           #   % initial density  [g/cm3]
-ro              = np.ones([1, n+1]) * roi
 
-P               = np.ones([1, n+1]) * Pi
-
-aa              = -1 / vis / dx**2 / 2
-bb              = -Diffusion / dx**2
-
-Pformer         = np.copy(P)
-Cformer         = np.copy(C)
-
-por0f           = np.copy(por0)
-U               = np.zeros(C.shape)
-Cpv             = np.zeros((nPrimary, 1))
-numPV           = 0
-C_all           = []
-rme             = np.zeros([nMineral, n+1])
-rmef            = np.zeros([nMineral, n+1])
-rmeb            = np.zeros([nMineral, n+1])
-KK              = np.zeros([4, n+1])
 
 elapsed_time    = 0
 dt_Counter      = 0
@@ -306,13 +267,11 @@ Asf             = np.zeros(As.shape)
 Asb             = np.zeros(As.shape)
 
 shPH            = 0
-Adam            = 1000
 
 Q               = 75.7682 * kInjectionRate  
 uinj            = Q / Ax
 
 times           = nPoreVolume * Ax * L * initialPorosity / Q + 10
-kkkkk           = 1
 
 
 print(' rate constans:  ', k123,'\n', 'nSecondary=',nSecondary, '\n', 'np=',nPrimary, '\n','Ksolid: ', Ksolid)
@@ -346,7 +305,7 @@ config.Xinj       = Xinj
 config.k123       = k123
 config.Macid      = Macid
 config.keq_acid   = keq_acid
-config.gama1      = gama1
+# config.gama1      = gama1
 config.rmef       = rmef
 config.rmeb       = rmeb
 config.rme        = rme
